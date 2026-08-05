@@ -26,8 +26,9 @@ model CheckIn {
 }
 
 model Settings {
-  id          Int    @id @default(1)
-  trackerName String @default("")
+  id          Int     @id @default(1)
+  trackerName String  @default("")
+  shareToken  String? @unique
 }
 
 model DinnerLog {

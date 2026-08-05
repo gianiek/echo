@@ -58,6 +58,25 @@ export default function CheckInDialog({
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextSearch = useRef(false);
 
+  async function reverseGeocode(loc: Location) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lng}`
+      );
+      const data = await res.json();
+      if (data?.display_name) {
+        skipNextSearch.current = true;
+        setPlaceText(data.display_name.split(",").slice(0, 2).join(","));
+      }
+    } catch {
+      // leave the place field blank for the user to type
+    }
+  }
+
+  // Resets the whole form whenever the dialog opens for a different target (create vs.
+  // edit vs. a fresh tap-to-pin location) — a controlled "reset on open" sync, not a
+  // response to external data, so the set-state-in-effect lint nudge doesn't apply here.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!open) return;
 
@@ -88,21 +107,7 @@ export default function CheckInDialog({
     setShowEmojiPicker(false);
     setFormError(null);
   }, [open, editing, initialLocation]);
-
-  async function reverseGeocode(loc: Location) {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lng}`
-      );
-      const data = await res.json();
-      if (data?.display_name) {
-        skipNextSearch.current = true;
-        setPlaceText(data.display_name.split(",").slice(0, 2).join(","));
-      }
-    } catch {
-      // leave the place field blank for the user to type
-    }
-  }
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function resolveMapsLink(url: string) {
     setLinkStatus("resolving");
@@ -261,7 +266,7 @@ export default function CheckInDialog({
             <p className="mt-1 text-[0.625rem] text-ink-soft">resolving Google Maps link…</p>
           ) : null}
           {linkStatus === "error" ? (
-            <p className="mt-1 text-[0.625rem] text-accent">couldn't resolve that link</p>
+            <p className="mt-1 text-[0.625rem] text-accent">couldn&apos;t resolve that link</p>
           ) : null}
           {location && !searching && suggestions.length === 0 && linkStatus === "idle" ? (
             <p className="mt-1 text-[0.625rem] text-mint">📍 location set</p>

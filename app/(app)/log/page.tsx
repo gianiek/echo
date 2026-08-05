@@ -57,7 +57,7 @@ export default function LogPage() {
         <p className="text-xs text-ink-soft">loading…</p>
       ) : groups.length === 0 ? (
         <p className="text-xs text-ink-soft">
-          Nothing logged yet — hit "+ Check In" to add your first stop.
+          Nothing logged yet — hit &quot;+ Check In&quot; to add your first stop.
         </p>
       ) : (
         groups.map((group) => (

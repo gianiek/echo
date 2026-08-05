@@ -66,8 +66,16 @@ body {
 /* ---------- shared pixel primitives (chunky border + hard offset shadow, no blur) ---------- */
 .pixel-box {
   background: var(--panel);
+  color: var(--ink);
   border: 3px solid var(--ink);
   box-shadow: 4px 4px 0 0 var(--shadow);
+}
+
+/* native <dialog> has its own UA color/background that doesn't inherit from
+   the page — pin it explicitly so theme colors always win inside dialogs */
+dialog.pixel-box {
+  color: var(--ink);
+  background: var(--panel);
 }
 
 .pixel-box-sm {

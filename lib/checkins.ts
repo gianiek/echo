@@ -18,3 +18,17 @@ export function serializeCheckIn(checkIn: CheckIn) {
     googleMapsUrl: googleMapsUrl(checkIn.lat, checkIn.lng),
   };
 }
+
+/** Public/shared view — leaves out $ amounts, spend category, and notes. */
+export function serializePublicCheckIn(checkIn: CheckIn) {
+  return {
+    id: checkIn.id,
+    placeName: checkIn.placeName,
+    lat: checkIn.lat,
+    lng: checkIn.lng,
+    emoji: checkIn.emoji,
+    timestamp: checkIn.timestamp.toISOString(),
+    isWorkout: checkIn.isWorkout,
+    googleMapsUrl: googleMapsUrl(checkIn.lat, checkIn.lng),
+  };
+}

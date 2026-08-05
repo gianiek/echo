@@ -125,7 +125,7 @@ export default function StatsPage() {
         </div>
       ) : (
         <p className="text-xs text-ink-soft">
-          No dinners logged yet — set tonight's on the Log tab.
+          No dinners logged yet — set tonight&apos;s on the Log tab.
         </p>
       )}
     </div>

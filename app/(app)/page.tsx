@@ -51,9 +51,11 @@ export default function MapPage() {
             setTapLocation({ lat, lng });
             setDialogOpen(true);
           }}
-          onMarkerClick={(checkIn) => {
+          onMarkerClick={(mapCheckIn) => {
+            const full = checkIns.find((c) => c.id === mapCheckIn.id);
+            if (!full) return;
             setTapLocation(null);
-            setEditing(checkIn);
+            setEditing(full);
             setDialogOpen(true);
           }}
         />

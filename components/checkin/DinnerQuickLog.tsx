@@ -30,7 +30,7 @@ export default function DinnerQuickLog() {
   return (
     <div className="pixel-box-sm mb-3 p-3">
       <p className="mb-2 text-[0.625rem] tracking-wide text-ink-soft uppercase">
-        Tonight's dinner
+        Tonight&apos;s dinner
       </p>
       <div className="chip-row">
         <button

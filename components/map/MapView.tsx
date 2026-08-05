@@ -12,8 +12,9 @@ import {
   useMap,
   useMapEvents,
 } from "react-leaflet";
-import { groupByDay, formatTime } from "@/lib/dates";
-import type { CheckInDTO } from "@/lib/types";
+import { startOfDay } from "date-fns";
+import { formatTime } from "@/lib/dates";
+import type { MapCheckIn } from "@/lib/types";
 
 const DEFAULT_CENTER: [number, number] = [40.7128, -74.006]; // NYC fallback
 const DEFAULT_ZOOM = 11;
@@ -28,7 +29,7 @@ function createEmojiIcon(emoji: string, timeLabel: string) {
   });
 }
 
-function FitToCheckIns({ checkIns }: { checkIns: CheckInDTO[] }) {
+function FitToCheckIns({ checkIns }: { checkIns: MapCheckIn[] }) {
   const map = useMap();
 
   useEffect(() => {
@@ -68,18 +69,29 @@ function ClickToAdd({ onMapClick }: { onMapClick: (lat: number, lng: number) => 
 }
 
 type Props = {
-  checkIns: CheckInDTO[];
-  onMapClick: (lat: number, lng: number) => void;
-  onMarkerClick: (checkIn: CheckInDTO) => void;
+  checkIns: MapCheckIn[];
+  onMapClick?: (lat: number, lng: number) => void;
+  onMarkerClick?: (checkIn: MapCheckIn) => void;
 };
 
 export default function MapView({ checkIns, onMapClick, onMarkerClick }: Props) {
+  // Leaflet touches window/document at import time, so this only ever renders after
+  // mount (the component is already loaded via next/dynamic with ssr:false) — a one-time
+  // client-mount guard, not syncing to external data, so the lint nudge doesn't apply.
   const [ready, setReady] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setReady(true), []);
 
   const dayLines = useMemo(() => {
-    return groupByDay(checkIns)
-      .map((group) => [...group.items].sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1)))
+    const byDay = new Map<string, MapCheckIn[]>();
+    for (const c of checkIns) {
+      const key = startOfDay(new Date(c.timestamp)).toISOString();
+      const bucket = byDay.get(key) ?? [];
+      bucket.push(c);
+      byDay.set(key, bucket);
+    }
+    return Array.from(byDay.values())
+      .map((items) => [...items].sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1)))
       .filter((items) => items.length >= 2)
       .map((items) => items.map((c) => [c.lat, c.lng] as [number, number]));
   }, [checkIns]);
@@ -98,7 +110,7 @@ export default function MapView({ checkIns, onMapClick, onMarkerClick }: Props) 
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
       />
       <FitToCheckIns checkIns={checkIns} />
-      <ClickToAdd onMapClick={onMapClick} />
+      {onMapClick ? <ClickToAdd onMapClick={onMapClick} /> : null}
 
       {dayLines.map((points, i) => (
         <Polyline
@@ -113,7 +125,7 @@ export default function MapView({ checkIns, onMapClick, onMarkerClick }: Props) 
           key={checkIn.id}
           position={[checkIn.lat, checkIn.lng]}
           icon={createEmojiIcon(checkIn.emoji, formatTime(checkIn.timestamp))}
-          eventHandlers={{ click: () => onMarkerClick(checkIn) }}
+          eventHandlers={onMarkerClick ? { click: () => onMarkerClick(checkIn) } : undefined}
         >
           <Popup>
             <div className="min-w-[160px] font-body text-xs">
