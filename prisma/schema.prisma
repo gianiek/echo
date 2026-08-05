@@ -1,0 +1,36 @@
+// Prisma schema for Echo — see /Users/gk/.claude/plans/rosy-mixing-rose.md for the full design doc
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model CheckIn {
+  id            String   @id @default(cuid())
+  placeName     String
+  lat           Float
+  lng           Float
+  emoji         String
+  timestamp     DateTime
+  amountSpent   Float?
+  spendCategory String?
+  isWorkout     Boolean  @default(false)
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@index([timestamp])
+}
+
+model Settings {
+  id          Int    @id @default(1)
+  trackerName String @default("")
+}
+
+model DinnerLog {
+  date DateTime @id
+  type String
+}
