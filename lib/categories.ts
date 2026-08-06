@@ -1,4 +1,5 @@
 export const SPEND_CATEGORIES: Record<string, string> = {
+  "🛒": "Groceries",
   "🍔": "Food",
   "☕": "Coffee",
   "🛍️": "Shopping",

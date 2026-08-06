@@ -116,6 +116,21 @@ dialog.pixel-box {
   background: var(--accent);
   color: var(--accent-ink);
 }
+.pixel-btn .icon-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 2px;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  font-size: 0.75rem;
+  vertical-align: -5px;
+}
+.pixel-btn--accent .icon-badge {
+  background: var(--panel);
+}
+
 .pixel-btn--fab {
   width: 44px;
   height: 44px;

@@ -12,19 +12,23 @@ type StatsResponse = {
   bars: { segments: number; spent: number; places: number; workouts: number; noSpend: number };
 };
 
-type DinnerResponse = {
-  counts: { made: number; purchased: number };
-  percentages: { made: number; purchased: number };
-  total: number;
+type DailyResponse = {
+  dinner: { counts: { made: number; purchased: number }; percentages: { made: number; purchased: number }; total: number };
+  homeVsVisited: {
+    counts: { stayedHome: number; visited: number };
+    percentages: { stayedHome: number; visited: number };
+    total: number;
+  };
+  mood: { counts: number[]; percentages: number[]; total: number };
 };
 
 export default function StatsPage() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [dinner, setDinner] = useState<DinnerResponse | null>(null);
+  const [daily, setDaily] = useState<DailyResponse | null>(null);
 
   useEffect(() => {
     fetch("/api/stats").then((res) => res.json()).then(setStats);
-    fetch("/api/dinner").then((res) => res.json()).then(setDinner);
+    fetch("/api/daily").then((res) => res.json()).then(setDaily);
   }, []);
 
   if (!stats) {
@@ -98,27 +102,31 @@ export default function StatsPage() {
       <p className="mt-5 mb-2 text-[0.6875rem] tracking-wide text-ink-soft uppercase">
         Dinner
       </p>
-      {dinner && dinner.total > 0 ? (
+      {daily && daily.dinner.total > 0 ? (
         <div className="pixel-box-sm flex flex-col gap-3 p-3">
           <div>
             <div className="mb-1 flex items-center justify-between text-[0.6875rem]">
               <span>🍳 Made</span>
               <span className="text-ink-soft">
-                {dinner.percentages.made}% ({dinner.counts.made})
+                {daily.dinner.percentages.made}% ({daily.dinner.counts.made})
               </span>
             </div>
-            <PixelBar variant="percent" percent={dinner.percentages.made} color="var(--accent)" />
+            <PixelBar
+              variant="percent"
+              percent={daily.dinner.percentages.made}
+              color="var(--accent)"
+            />
           </div>
           <div>
             <div className="mb-1 flex items-center justify-between text-[0.6875rem]">
               <span>🛍️ Purchased</span>
               <span className="text-ink-soft">
-                {dinner.percentages.purchased}% ({dinner.counts.purchased})
+                {daily.dinner.percentages.purchased}% ({daily.dinner.counts.purchased})
               </span>
             </div>
             <PixelBar
               variant="percent"
-              percent={dinner.percentages.purchased}
+              percent={daily.dinner.percentages.purchased}
               color="var(--accent-2)"
             />
           </div>
@@ -127,6 +135,68 @@ export default function StatsPage() {
         <p className="text-xs text-ink-soft">
           No dinners logged yet — set tonight&apos;s on the Log tab.
         </p>
+      )}
+
+      <p className="mt-5 mb-2 text-[0.6875rem] tracking-wide text-ink-soft uppercase">
+        Home vs. Out
+      </p>
+      {daily && daily.homeVsVisited.total > 0 ? (
+        <div className="pixel-box-sm flex flex-col gap-3 p-3">
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[0.6875rem]">
+              <span>🏠 Stayed home</span>
+              <span className="text-ink-soft">
+                {daily.homeVsVisited.percentages.stayedHome}% (
+                {daily.homeVsVisited.counts.stayedHome})
+              </span>
+            </div>
+            <PixelBar
+              variant="percent"
+              percent={daily.homeVsVisited.percentages.stayedHome}
+              color="var(--accent-2)"
+            />
+          </div>
+          <div>
+            <div className="mb-1 flex items-center justify-between text-[0.6875rem]">
+              <span>📍 Visited places</span>
+              <span className="text-ink-soft">
+                {daily.homeVsVisited.percentages.visited}% (
+                {daily.homeVsVisited.counts.visited})
+              </span>
+            </div>
+            <PixelBar
+              variant="percent"
+              percent={daily.homeVsVisited.percentages.visited}
+              color="var(--accent)"
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-ink-soft">
+          Nothing tracked yet — check the &quot;didn&apos;t leave the house&quot; box on the Log
+          tab, or add a check-in.
+        </p>
+      )}
+
+      <p className="mt-5 mb-2 text-[0.6875rem] tracking-wide text-ink-soft uppercase">
+        Mood
+      </p>
+      {daily && daily.mood.total > 0 ? (
+        <div className="pixel-box-sm flex flex-col gap-2.5 p-3">
+          {[1, 2, 3, 4, 5].map((level, i) => (
+            <div key={level}>
+              <div className="mb-1 flex items-center justify-between text-[0.6875rem]">
+                <span>{level}</span>
+                <span className="text-ink-soft">
+                  {daily.mood.percentages[i]}% ({daily.mood.counts[i]})
+                </span>
+              </div>
+              <PixelBar variant="percent" percent={daily.mood.percentages[i]} color="var(--accent-2)" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-ink-soft">No mood logged yet — rate today on the Log tab.</p>
       )}
     </div>
   );

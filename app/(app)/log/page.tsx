@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import CheckInDialog from "@/components/checkin/CheckInDialog";
-import DinnerQuickLog from "@/components/checkin/DinnerQuickLog";
+import DailyQuickLog from "@/components/checkin/DailyQuickLog";
 import PixelButton from "@/components/pixel/PixelButton";
 import { groupByDay, formatTime } from "@/lib/dates";
 import type { CheckInDTO } from "@/lib/types";
@@ -37,7 +37,7 @@ export default function LogPage() {
 
   return (
     <div>
-      <DinnerQuickLog />
+      <DailyQuickLog />
       <div className="mb-3 flex items-center justify-between">
         <p className="section-heading text-[0.6875rem] tracking-wide text-ink-soft uppercase">
           Timeline

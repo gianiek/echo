@@ -31,7 +31,12 @@ model Settings {
   shareToken  String? @unique
 }
 
-model DinnerLog {
-  date DateTime @id
-  type String
+// One row per calendar day of daily (non-check-in) tracking — deliberately consolidated
+// into a single table, rather than one table per habit, so a future "wrapped"-style
+// yearly summary can scan one table instead of joining several.
+model DailyLog {
+  date             DateTime @id
+  dinnerType       String? // "made" | "purchased"
+  didNotLeaveHouse Boolean  @default(false)
+  mood             Int? // 1-5
 }
