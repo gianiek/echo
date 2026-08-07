@@ -40,3 +40,46 @@ model DailyLog {
   didNotLeaveHouse Boolean  @default(false)
   mood             Int? // 1-5
 }
+
+model Movie {
+  id        String   @id @default(cuid())
+  title     String
+  emoji     String
+  watchedAt DateTime
+  rating    Int? // 1-5
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([watchedAt])
+}
+
+model Book {
+  id        String   @id @default(cuid())
+  title     String
+  author    String?
+  emoji     String
+  readAt    DateTime
+  rating    Int? // 1-5
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([readAt])
+}
+
+model Walk {
+  id              String   @id @default(cuid())
+  startPlaceName  String
+  startLat        Float
+  startLng        Float
+  endPlaceName    String
+  endLat          Float
+  endLng          Float
+  route           Json // [[lat,lng], ...] geometry from OpenRouteService
+  distanceMeters  Float
+  durationSeconds Float
+  timestamp       DateTime
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  @@index([timestamp])
+}

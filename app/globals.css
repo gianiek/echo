@@ -388,6 +388,55 @@ dialog.pixel-box {
   white-space: nowrap;
 }
 
+.pixel-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 10px;
+  background: var(--panel-2);
+  border: 2px solid var(--ink);
+  cursor: pointer;
+}
+.pixel-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 0 var(--shadow);
+  cursor: pointer;
+}
+.pixel-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--accent);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 0 var(--shadow);
+  border-radius: 0;
+  cursor: pointer;
+}
+.pixel-range::-moz-range-track {
+  background: transparent;
+}
+.pixel-range:focus-visible {
+  outline: 3px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.walk-route-path {
+  animation: walk-dash 1.2s linear infinite;
+}
+@keyframes walk-dash {
+  to {
+    stroke-dashoffset: -14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .walk-route-path {
+    animation: none;
+  }
+}
+
 .maps-link {
   font-size: 0.625rem;
   color: var(--accent-2);

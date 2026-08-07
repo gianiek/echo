@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PixelCheckbox } from "@/components/pixel/PixelField";
+import PixelRating from "@/components/pixel/PixelRating";
 import { localDayISO } from "@/lib/dates";
 
 type DinnerType = "made" | "purchased" | null;
@@ -45,8 +46,7 @@ export default function DailyQuickLog() {
     save({ didNotLeaveHouse: checked });
   }
 
-  function chooseMood(level: number) {
-    const next = mood === level ? null : level;
+  function chooseMood(next: number | null) {
     setMood(next);
     save({ mood: next });
   }
@@ -84,25 +84,12 @@ export default function DailyQuickLog() {
         onChange={(e) => toggleHome(e.target.checked)}
       />
 
-      <div>
-        <p className="mb-2 text-[0.625rem] tracking-wide text-ink-soft uppercase">
-          Mood today
-        </p>
-        <div className="chip-row">
-          {[1, 2, 3, 4, 5].map((level) => (
-            <button
-              key={level}
-              type="button"
-              onClick={() => chooseMood(level)}
-              disabled={saving}
-              className={`chip ${mood === level ? "is-active" : ""}`}
-              aria-label={`Mood ${level} of 5`}
-            >
-              {level}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PixelRating
+        label="Mood today"
+        value={mood}
+        onChange={chooseMood}
+        disabled={saving}
+      />
     </div>
   );
 }

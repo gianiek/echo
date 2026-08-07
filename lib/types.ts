@@ -36,3 +36,40 @@ export type MapCheckIn = {
   googleMapsUrl: string;
   amountSpent?: number | null;
 };
+
+export type MovieDTO = {
+  id: string;
+  title: string;
+  emoji: string;
+  watchedAt: string;
+  rating: number | null;
+  notes: string | null;
+  createdAt: string;
+};
+
+export type BookDTO = {
+  id: string;
+  title: string;
+  author: string | null;
+  emoji: string;
+  readAt: string;
+  rating: number | null;
+  notes: string | null;
+  createdAt: string;
+};
+
+export type WalkDTO = {
+  id: string;
+  startPlaceName: string;
+  startLat: number;
+  startLng: number;
+  endPlaceName: string;
+  endLat: number;
+  endLng: number;
+  route: [number, number][];
+  distanceMeters: number;
+  durationSeconds: number;
+  timestamp: string;
+  notes: string | null;
+  createdAt: string;
+};

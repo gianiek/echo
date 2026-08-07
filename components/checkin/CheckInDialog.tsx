@@ -1,20 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { EmojiClickData } from "emoji-picker-react";
 import PixelDialog from "@/components/pixel/PixelDialog";
 import PixelButton from "@/components/pixel/PixelButton";
 import { PixelInput, PixelTextarea, PixelCheckbox } from "@/components/pixel/PixelField";
+import LocationField from "@/components/checkin/LocationField";
+import { useLocationPicker, type Location } from "@/components/checkin/useLocationPicker";
 import { PIN_EMOJI_QUICK_PICKS, SPEND_CATEGORIES } from "@/lib/categories";
-import { isGoogleMapsUrl } from "@/lib/maps";
 import type { CheckInDTO } from "@/lib/types";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
-
-type NominatimResult = { display_name: string; lat: string; lon: string };
-
-type Location = { lat: number; lng: number };
 
 function toDatetimeLocalValue(date: Date): string {
   const offsetMs = date.getTimezoneOffset() * 60 * 1000;
@@ -39,11 +36,18 @@ export default function CheckInDialog({
   editing,
   initialLocation,
 }: Props) {
-  const [placeText, setPlaceText] = useState("");
-  const [location, setLocation] = useState<Location | null>(null);
-  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [linkStatus, setLinkStatus] = useState<"idle" | "resolving" | "error">("idle");
+  const {
+    placeText,
+    location,
+    suggestions,
+    searching,
+    linkStatus,
+    reset: resetLocation,
+    setFromTap,
+    handlePlaceChange,
+    selectSuggestion,
+  } = useLocationPicker();
+
   const [pinEmoji, setPinEmoji] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [timestampLocal, setTimestampLocal] = useState(() => toDatetimeLocalValue(new Date()));
@@ -55,24 +59,6 @@ export default function CheckInDialog({
   const [deleting, setDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const skipNextSearch = useRef(false);
-
-  async function reverseGeocode(loc: Location) {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lng}`
-      );
-      const data = await res.json();
-      if (data?.display_name) {
-        skipNextSearch.current = true;
-        setPlaceText(data.display_name.split(",").slice(0, 2).join(","));
-      }
-    } catch {
-      // leave the place field blank for the user to type
-    }
-  }
-
   // Resets the whole form whenever the dialog opens for a different target (create vs.
   // edit vs. a fresh tap-to-pin location) — a controlled "reset on open" sync, not a
   // response to external data, so the set-state-in-effect lint nudge doesn't apply here.
@@ -81,8 +67,7 @@ export default function CheckInDialog({
     if (!open) return;
 
     if (editing) {
-      setPlaceText(editing.placeName);
-      setLocation({ lat: editing.lat, lng: editing.lng });
+      resetLocation({ placeName: editing.placeName, lat: editing.lat, lng: editing.lng });
       setPinEmoji(editing.emoji);
       setTimestampLocal(toDatetimeLocalValue(new Date(editing.timestamp)));
       setAmountText(editing.amountSpent != null ? String(editing.amountSpent) : "");
@@ -90,10 +75,9 @@ export default function CheckInDialog({
       setIsWorkout(editing.isWorkout);
       setNotes(editing.notes ?? "");
     } else {
-      setPlaceText("");
-      setLocation(initialLocation ?? null);
+      resetLocation();
       if (initialLocation) {
-        reverseGeocode(initialLocation);
+        setFromTap(initialLocation);
       }
       setPinEmoji("");
       setTimestampLocal(toDatetimeLocalValue(new Date()));
@@ -102,83 +86,11 @@ export default function CheckInDialog({
       setIsWorkout(false);
       setNotes("");
     }
-    setSuggestions([]);
-    setLinkStatus("idle");
     setShowEmojiPicker(false);
     setFormError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing, initialLocation]);
   /* eslint-enable react-hooks/set-state-in-effect */
-
-  async function resolveMapsLink(url: string) {
-    setLinkStatus("resolving");
-    setSuggestions([]);
-    try {
-      const res = await fetch("/api/geocode/resolve-maps-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setLinkStatus("error");
-        return;
-      }
-      setLocation({ lat: data.lat, lng: data.lng });
-      if (data.placeName) {
-        skipNextSearch.current = true;
-        setPlaceText(data.placeName);
-      }
-      setLinkStatus("idle");
-    } catch {
-      setLinkStatus("error");
-    }
-  }
-
-  function handlePlaceChange(value: string) {
-    setPlaceText(value);
-    setLocation(null);
-
-    if (skipNextSearch.current) {
-      skipNextSearch.current = false;
-      return;
-    }
-
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-
-    if (isGoogleMapsUrl(value)) {
-      setSuggestions([]);
-      searchTimer.current = setTimeout(() => resolveMapsLink(value.trim()), 350);
-      return;
-    }
-
-    setLinkStatus("idle");
-    if (value.trim().length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
-    searchTimer.current = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(value)}`
-        );
-        const data: NominatimResult[] = await res.json();
-        setSuggestions(data);
-      } catch {
-        setSuggestions([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 400);
-  }
-
-  function selectSuggestion(result: NominatimResult) {
-    skipNextSearch.current = true;
-    setPlaceText(result.display_name.split(",").slice(0, 2).join(","));
-    setLocation({ lat: parseFloat(result.lat), lng: parseFloat(result.lon) });
-    setSuggestions([]);
-  }
 
   const amount = amountText.trim() === "" ? null : Number(amountText);
   const showCategoryPicker = amount !== null && amount > 0;
@@ -250,43 +162,17 @@ export default function CheckInDialog({
   return (
     <PixelDialog open={open} onClose={onClose} title={editing ? "EDIT CHECK-IN" : "NEW CHECK-IN"}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="pixel-field relative">
-          <label htmlFor="ci-place">Place</label>
-          <input
-            id="ci-place"
-            className="pixel-input"
-            value={placeText}
-            onChange={(e) => handlePlaceChange(e.target.value)}
-            placeholder="search a name or paste a Google Maps link"
-            autoComplete="off"
-            required
-          />
-          {searching ? <p className="mt-1 text-[0.625rem] text-ink-soft">searching…</p> : null}
-          {linkStatus === "resolving" ? (
-            <p className="mt-1 text-[0.625rem] text-ink-soft">resolving Google Maps link…</p>
-          ) : null}
-          {linkStatus === "error" ? (
-            <p className="mt-1 text-[0.625rem] text-accent">couldn&apos;t resolve that link</p>
-          ) : null}
-          {location && !searching && suggestions.length === 0 && linkStatus === "idle" ? (
-            <p className="mt-1 text-[0.625rem] text-mint">📍 location set</p>
-          ) : null}
-          {suggestions.length > 0 ? (
-            <ul className="mt-1 flex flex-col gap-1">
-              {suggestions.map((s, i) => (
-                <li key={i}>
-                  <button
-                    type="button"
-                    onClick={() => selectSuggestion(s)}
-                    className="w-full border-2 border-dashed border-ink-soft bg-panel-2 px-2 py-1.5 text-left text-[0.6875rem] text-ink-soft hover:text-ink cursor-pointer"
-                  >
-                    📍 {s.display_name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
+        <LocationField
+          id="ci-place"
+          label="Place"
+          placeText={placeText}
+          onPlaceChange={handlePlaceChange}
+          suggestions={suggestions}
+          onSelectSuggestion={selectSuggestion}
+          searching={searching}
+          linkStatus={linkStatus}
+          located={!!location}
+        />
 
         <div className="pixel-field">
           <label>Pin emoji</label>

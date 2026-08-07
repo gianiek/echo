@@ -17,3 +17,7 @@ export function categoryLabel(emoji: string | null): string | null {
 }
 
 export const PIN_EMOJI_QUICK_PICKS = ["🛒", "🍔", "☕", "🏋️", "🎬", "🌳"];
+
+export const MOVIE_EMOJI_QUICK_PICKS = ["🎬", "🍿", "🎥", "😂", "😱", "❤️", "💀", "🚀", "🎭"];
+
+export const BOOK_EMOJI_QUICK_PICKS = ["📖", "📚", "🧙", "💕", "🔍", "🐉", "😢", "🚀"];

@@ -1,18 +1,17 @@
 import { format, isToday, isYesterday, startOfDay } from "date-fns";
-import type { CheckInDTO } from "@/lib/types";
 
-export type DayGroup = {
+export type DayGroup<T> = {
   dayKey: string;
   label: string;
-  items: CheckInDTO[];
+  items: T[];
 };
 
-/** Groups check-ins by their local calendar day, derived from `timestamp` — never `createdAt`. */
-export function groupByDay(checkIns: CheckInDTO[]): DayGroup[] {
-  const groups = new Map<string, DayGroup>();
+/** Groups anything with a `timestamp` by local calendar day — always `timestamp`, never `createdAt`. */
+export function groupByDay<T extends { timestamp: string }>(items: T[]): DayGroup<T>[] {
+  const groups = new Map<string, DayGroup<T>>();
 
-  for (const checkIn of checkIns) {
-    const date = new Date(checkIn.timestamp);
+  for (const item of items) {
+    const date = new Date(item.timestamp);
     const dayKey = startOfDay(date).toISOString();
 
     let group = groups.get(dayKey);
@@ -25,7 +24,7 @@ export function groupByDay(checkIns: CheckInDTO[]): DayGroup[] {
       group = { dayKey, label, items: [] };
       groups.set(dayKey, group);
     }
-    group.items.push(checkIn);
+    group.items.push(item);
   }
 
   return Array.from(groups.values()).sort((a, b) => (a.dayKey < b.dayKey ? 1 : -1));
