@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { serializeCheckIn } from "@/lib/checkins";
+import { isSafeEmoji } from "@/lib/validate";
 
 export async function GET() {
   const checkIns = await prisma.checkIn.findMany({
@@ -23,6 +24,9 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
+  if (!isSafeEmoji(emoji)) {
+    return NextResponse.json({ error: "Invalid emoji" }, { status: 400 });
+  }
 
   const timestamp = body.timestamp ? new Date(body.timestamp) : new Date();
   if (Number.isNaN(timestamp.getTime())) {
@@ -39,7 +43,7 @@ export async function POST(request: Request) {
   }
 
   const spendCategory =
-    amountSpent && amountSpent > 0 && typeof body.spendCategory === "string"
+    amountSpent && amountSpent > 0 && typeof body.spendCategory === "string" && isSafeEmoji(body.spendCategory)
       ? body.spendCategory
       : null;
 

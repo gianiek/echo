@@ -18,7 +18,7 @@ export default function SharedView({
   checkIns: PublicCheckInDTO[];
 }) {
   return (
-    <div className="pixel-box mx-auto flex w-full max-w-[420px] flex-1 flex-col">
+    <div className="pixel-box mx-auto flex w-full max-w-[420px] flex-1 flex-col lg:max-w-[720px]">
       <div className="flex items-center justify-center gap-2 px-3 py-3 font-display text-xs">
         <span>🦇 ECHO</span>
       </div>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PixelCheckbox } from "@/components/pixel/PixelField";
+import { PixelCheckbox, PixelInput } from "@/components/pixel/PixelField";
 import PixelRating from "@/components/pixel/PixelRating";
-import { localDayISO } from "@/lib/dates";
+import { localDayISO, minutesToTimeInputValue, timeInputValueToMinutes } from "@/lib/dates";
+import { MOOD_EMOJI } from "@/lib/categories";
 
 type DinnerType = "made" | "purchased" | null;
 
@@ -11,6 +12,7 @@ export default function DailyQuickLog() {
   const [dinnerType, setDinnerType] = useState<DinnerType>(null);
   const [didNotLeaveHouse, setDidNotLeaveHouse] = useState(false);
   const [mood, setMood] = useState<number | null>(null);
+  const [wakeMinutes, setWakeMinutes] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -20,6 +22,7 @@ export default function DailyQuickLog() {
         setDinnerType(data.today?.dinnerType ?? null);
         setDidNotLeaveHouse(data.today?.didNotLeaveHouse ?? false);
         setMood(data.today?.mood ?? null);
+        setWakeMinutes(data.today?.wakeMinutes ?? null);
       });
   }, []);
 
@@ -49,6 +52,12 @@ export default function DailyQuickLog() {
   function chooseMood(next: number | null) {
     setMood(next);
     save({ mood: next });
+  }
+
+  function chooseWakeTime(value: string) {
+    const next = value === "" ? null : timeInputValueToMinutes(value);
+    setWakeMinutes(next);
+    save({ wakeMinutes: next });
   }
 
   return (
@@ -88,6 +97,16 @@ export default function DailyQuickLog() {
         label="Mood today"
         value={mood}
         onChange={chooseMood}
+        disabled={saving}
+        labels={MOOD_EMOJI}
+      />
+
+      <PixelInput
+        id="wake-time"
+        label="Woke up at"
+        type="time"
+        value={wakeMinutes != null ? minutesToTimeInputValue(wakeMinutes) : ""}
+        onChange={(e) => chooseWakeTime(e.target.value)}
         disabled={saving}
       />
     </div>

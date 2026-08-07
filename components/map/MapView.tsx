@@ -31,9 +31,22 @@ function fitToPoints(map: L.Map, points: BoundsPoint[]) {
   map.fitBounds(bounds, { padding: [40, 40] });
 }
 
+// Leaflet's divIcon inserts `html` as raw markup, bypassing React's escaping — the
+// emoji/timeLabel are already validated server-side, but escaping here too means a
+// bad value can never become executable markup, even from data written before that
+// validation existed or a future code path that skips it.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function createEmojiIcon(emoji: string, timeLabel: string) {
   return L.divIcon({
-    html: `<div class="pin-wrap"><div class="pin">${emoji}</div><time>${timeLabel}</time></div>`,
+    html: `<div class="pin-wrap"><div class="pin">${escapeHtml(emoji)}</div><time>${escapeHtml(timeLabel)}</time></div>`,
     className: "",
     iconSize: [30, 30],
     iconAnchor: [15, 15],
@@ -44,7 +57,7 @@ function createEmojiIcon(emoji: string, timeLabel: string) {
 /**
  * Defaults to the cluster of recent activity rather than fitting every point ever logged —
  * an all-time bounding box gets dominated by old, far-flung clusters and stops feeling like
- * "here's what's going on now." "Fit All" (below) is the explicit opt-in to see everything.
+ * "here's what's going on now."
  */
 function FitToCheckIns({ points }: { points: BoundsPoint[] }) {
   const map = useMap();
@@ -79,21 +92,6 @@ function FitToCheckIns({ points }: { points: BoundsPoint[] }) {
   }, [points.length]);
 
   return null;
-}
-
-function FitAllControl({ points }: { points: BoundsPoint[] }) {
-  const map = useMap();
-  if (points.length < 2) return null;
-
-  return (
-    <button
-      type="button"
-      onClick={() => fitToPoints(map, points)}
-      className="pixel-btn absolute top-2 right-2 z-[1000] text-[0.625rem]"
-    >
-      🔭 Fit All
-    </button>
-  );
 }
 
 function ClickToAdd({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
@@ -160,7 +158,6 @@ export default function MapView({ checkIns, walks = [], onMapClick, onMarkerClic
         url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
       />
       <FitToCheckIns points={boundsPoints} />
-      <FitAllControl points={boundsPoints} />
       {onMapClick ? <ClickToAdd onMapClick={onMapClick} /> : null}
 
       {dayLines.map((points, i) => (

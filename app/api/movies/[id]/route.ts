@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isSafeEmoji } from "@/lib/validate";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -9,7 +10,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   const data: Record<string, unknown> = {};
   if (typeof body.title === "string") data.title = body.title.trim();
-  if (typeof body.emoji === "string") data.emoji = body.emoji;
+  if (body.emoji !== undefined) {
+    if (typeof body.emoji !== "string" || !isSafeEmoji(body.emoji)) {
+      return NextResponse.json({ error: "Invalid emoji" }, { status: 400 });
+    }
+    data.emoji = body.emoji;
+  }
   if (body.watchedAt) data.watchedAt = new Date(body.watchedAt);
   if (body.notes !== undefined) {
     data.notes = typeof body.notes === "string" && body.notes.trim() ? body.notes.trim() : null;

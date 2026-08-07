@@ -53,6 +53,7 @@ export default function CheckInDialog({
   const [timestampLocal, setTimestampLocal] = useState(() => toDatetimeLocalValue(new Date()));
   const [amountText, setAmountText] = useState("");
   const [spendCategory, setSpendCategory] = useState<string | null>(null);
+  const [showSpendEmojiPicker, setShowSpendEmojiPicker] = useState(false);
   const [isWorkout, setIsWorkout] = useState(false);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -87,6 +88,7 @@ export default function CheckInDialog({
       setNotes("");
     }
     setShowEmojiPicker(false);
+    setShowSpendEmojiPicker(false);
     setFormError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing, initialLocation]);
@@ -107,6 +109,10 @@ export default function CheckInDialog({
       setFormError("That $ amount doesn't look right.");
       return;
     }
+
+    // Only sync when the workout flag is newly turned on — editing an existing
+    // workout check-in again shouldn't create a second Journal entry for it.
+    const justBecameWorkout = isWorkout && !(editing?.isWorkout ?? false);
 
     setSaving(true);
     try {
@@ -139,6 +145,22 @@ export default function CheckInDialog({
 
       const saved: CheckInDTO = await res.json();
       onSaved(saved);
+
+      if (justBecameWorkout) {
+        // Best-effort sync — logging it once here means it also shows up in the
+        // Journal heatmap/streak without a separate manual entry. A failure here
+        // shouldn't block or alarm the user over a check-in that already saved fine.
+        fetch("/api/journal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category: "🏋️",
+            note: `Workout: ${saved.placeName}`,
+            date: saved.timestamp,
+          }),
+        }).catch(() => {});
+      }
+
       onClose();
     } finally {
       setSaving(false);
@@ -246,7 +268,27 @@ export default function CheckInDialog({
                     {emoji}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => setShowSpendEmojiPicker((v) => !v)}
+                  className={`chip ${spendCategory && !SPEND_CATEGORIES[spendCategory] ? "is-active" : ""}`}
+                  aria-label="More emoji"
+                >
+                  {spendCategory && !SPEND_CATEGORIES[spendCategory] ? spendCategory : "…"}
+                </button>
               </div>
+              {showSpendEmojiPicker ? (
+                <div className="mt-2">
+                  <EmojiPicker
+                    onEmojiClick={(data: EmojiClickData) => {
+                      setSpendCategory(data.emoji);
+                      setShowSpendEmojiPicker(false);
+                    }}
+                    width="100%"
+                    height={300}
+                  />
+                </div>
+              ) : null}
             </>
           ) : null}
         </div>

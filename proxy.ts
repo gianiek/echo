@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AUTH_COOKIE, expectedAuthToken } from "@/lib/auth";
+import { AUTH_COOKIE, checkAuthToken } from "@/lib/auth";
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get(AUTH_COOKIE)?.value;
 
-  if (token !== expectedAuthToken()) {
+  if (!checkAuthToken(token)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);

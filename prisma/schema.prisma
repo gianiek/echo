@@ -39,6 +39,7 @@ model DailyLog {
   dinnerType       String? // "made" | "purchased"
   didNotLeaveHouse Boolean  @default(false)
   mood             Int? // 1-5
+  wakeMinutes      Int? // minutes since midnight, 0-1439
 }
 
 model Movie {

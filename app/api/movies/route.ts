@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isSafeEmoji } from "@/lib/validate";
 
 export async function GET() {
   const movies = await prisma.movie.findMany({ orderBy: { watchedAt: "desc" } });
@@ -13,6 +14,9 @@ export async function POST(request: Request) {
   const emoji = typeof body.emoji === "string" ? body.emoji : "";
   if (!title || !emoji) {
     return NextResponse.json({ error: "title and emoji are required" }, { status: 400 });
+  }
+  if (!isSafeEmoji(emoji)) {
+    return NextResponse.json({ error: "Invalid emoji" }, { status: 400 });
   }
 
   const watchedAt = body.watchedAt ? new Date(body.watchedAt) : new Date();

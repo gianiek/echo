@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { serializeCheckIn } from "@/lib/checkins";
+import { isSafeEmoji } from "@/lib/validate";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -13,7 +14,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   if (typeof body.placeName === "string") data.placeName = body.placeName.trim();
   if (body.lat !== undefined) data.lat = Number(body.lat);
   if (body.lng !== undefined) data.lng = Number(body.lng);
-  if (typeof body.emoji === "string") data.emoji = body.emoji;
+  if (body.emoji !== undefined) {
+    if (typeof body.emoji !== "string" || !isSafeEmoji(body.emoji)) {
+      return NextResponse.json({ error: "Invalid emoji" }, { status: 400 });
+    }
+    data.emoji = body.emoji;
+  }
   if (body.timestamp) data.timestamp = new Date(body.timestamp);
   if (body.isWorkout !== undefined) data.isWorkout = Boolean(body.isWorkout);
   if (body.notes !== undefined) {
@@ -30,11 +36,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
     data.amountSpent = amountSpent;
     data.spendCategory =
-      amountSpent && amountSpent > 0 && typeof body.spendCategory === "string"
+      amountSpent && amountSpent > 0 && typeof body.spendCategory === "string" && isSafeEmoji(body.spendCategory)
         ? body.spendCategory
         : null;
   } else if (body.spendCategory !== undefined) {
-    data.spendCategory = typeof body.spendCategory === "string" ? body.spendCategory : null;
+    if (body.spendCategory !== null && (typeof body.spendCategory !== "string" || !isSafeEmoji(body.spendCategory))) {
+      return NextResponse.json({ error: "Invalid spendCategory" }, { status: 400 });
+    }
+    data.spendCategory = body.spendCategory;
   }
 
   try {

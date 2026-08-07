@@ -26,5 +26,9 @@ export const JOURNAL_CATEGORIES: Record<string, string> = {
   "✨": "Whimsy",
   "🤓": "Learning",
   "🚀": "Progress",
+  "🍵": "Nourishment",
+  "🏋️": "Workout",
   "📝": "Other",
 };
+
+export const MOOD_EMOJI = ["😞", "😕", "😐", "🙂", "😄"];

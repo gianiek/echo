@@ -41,3 +41,24 @@ export function localDayISO(date: Date = new Date()): string {
 export function formatShortDate(iso: string): string {
   return format(new Date(iso), "MMM d");
 }
+
+/** Minutes-since-midnight <-> "HH:MM" for `<input type="time">`, and a human "7:30 AM" label. */
+export function minutesToTimeInputValue(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+    .toString()
+    .padStart(2, "0");
+  const m = (minutes % 60).toString().padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+export function timeInputValueToMinutes(value: string): number | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+export function formatMinutesAsTime(minutes: number): string {
+  const d = new Date();
+  d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+  return format(d, "h:mma").toLowerCase();
+}

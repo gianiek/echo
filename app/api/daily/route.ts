@@ -35,11 +35,14 @@ export async function GET(request: Request) {
   const visitedDays = visitedDayKeys.size;
   const homeVisitedTotal = stayedHomeDays + visitedDays;
 
-  // Mood distribution, 1-5
-  const moodCounts = [1, 2, 3, 4, 5].map(
-    (level) => allDaily.filter((d) => d.mood === level).length
-  );
-  const moodTotal = moodCounts.reduce((sum, n) => sum + n, 0);
+  // Mood and wake-time trends — sparse {date, value} pairs, only for days with a logged
+  // value. The line chart itself decides the display window and draws gaps for missing days.
+  const moodHistory = allDaily
+    .filter((d) => d.mood != null)
+    .map((d) => ({ date: d.date.toISOString(), value: d.mood as number }));
+  const wakeHistory = allDaily
+    .filter((d) => d.wakeMinutes != null)
+    .map((d) => ({ date: d.date.toISOString(), value: d.wakeMinutes as number }));
 
   return NextResponse.json({
     today: today
@@ -48,6 +51,7 @@ export async function GET(request: Request) {
           dinnerType: today.dinnerType,
           didNotLeaveHouse: today.didNotLeaveHouse,
           mood: today.mood,
+          wakeMinutes: today.wakeMinutes,
         }
       : null,
     dinner: {
@@ -66,11 +70,8 @@ export async function GET(request: Request) {
       },
       total: homeVisitedTotal,
     },
-    mood: {
-      counts: moodCounts,
-      percentages: moodCounts.map((n) => (moodTotal ? Math.round((n / moodTotal) * 100) : 0)),
-      total: moodTotal,
-    },
+    moodHistory,
+    wakeHistory,
   });
 }
 
@@ -104,6 +105,19 @@ export async function PUT(request: Request) {
     data.mood = body.mood;
   }
 
+  if (body.wakeMinutes !== undefined) {
+    if (
+      body.wakeMinutes !== null &&
+      (!Number.isInteger(body.wakeMinutes) || body.wakeMinutes < 0 || body.wakeMinutes > 1439)
+    ) {
+      return NextResponse.json(
+        { error: "wakeMinutes must be an integer 0-1439, or null" },
+        { status: 400 }
+      );
+    }
+    data.wakeMinutes = body.wakeMinutes;
+  }
+
   const entry = await prisma.dailyLog.upsert({
     where: { date },
     update: data,
@@ -115,5 +129,6 @@ export async function PUT(request: Request) {
     dinnerType: entry.dinnerType,
     didNotLeaveHouse: entry.didNotLeaveHouse,
     mood: entry.mood,
+    wakeMinutes: entry.wakeMinutes,
   });
 }

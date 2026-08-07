@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import PixelBar from "@/components/pixel/PixelBar";
+import PixelLineChart from "@/components/pixel/PixelLineChart";
+import ActivityHeatmap from "@/components/pixel/ActivityHeatmap";
+import { MOOD_EMOJI } from "@/lib/categories";
+import { formatMinutesAsTime } from "@/lib/dates";
+import type { MovieDTO, BookDTO } from "@/lib/types";
 
 type StatsResponse = {
   totalSpent: number;
@@ -19,16 +24,27 @@ type DailyResponse = {
     percentages: { stayedHome: number; visited: number };
     total: number;
   };
-  mood: { counts: number[]; percentages: number[]; total: number };
+  moodHistory: { date: string; value: number }[];
+  wakeHistory: { date: string; value: number }[];
 };
+
+function average(ratings: (number | null)[]): number | null {
+  const rated = ratings.filter((r): r is number => r != null);
+  if (!rated.length) return null;
+  return rated.reduce((sum, r) => sum + r, 0) / rated.length;
+}
 
 export default function StatsPage() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [daily, setDaily] = useState<DailyResponse | null>(null);
+  const [movies, setMovies] = useState<MovieDTO[] | null>(null);
+  const [books, setBooks] = useState<BookDTO[] | null>(null);
 
   useEffect(() => {
     fetch("/api/stats").then((res) => res.json()).then(setStats);
     fetch("/api/daily").then((res) => res.json()).then(setDaily);
+    fetch("/api/movies").then((res) => res.json()).then(setMovies);
+    fetch("/api/books").then((res) => res.json()).then(setBooks);
   }, []);
 
   if (!stats) {
@@ -41,7 +57,7 @@ export default function StatsPage() {
         Your stats
       </p>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         <Link href="/budget" className="pixel-box-sm relative block p-3">
           <span className="absolute top-2 right-2.5 text-accent" aria-hidden="true">
             ›
@@ -181,22 +197,72 @@ export default function StatsPage() {
       <p className="mt-5 mb-2 text-[0.6875rem] tracking-wide text-ink-soft uppercase">
         Mood
       </p>
-      {daily && daily.mood.total > 0 ? (
-        <div className="pixel-box-sm flex flex-col gap-2.5 p-3">
-          {[1, 2, 3, 4, 5].map((level, i) => (
-            <div key={level}>
-              <div className="mb-1 flex items-center justify-between text-[0.6875rem]">
-                <span>{level}</span>
-                <span className="text-ink-soft">
-                  {daily.mood.percentages[i]}% ({daily.mood.counts[i]})
-                </span>
-              </div>
-              <PixelBar variant="percent" percent={daily.mood.percentages[i]} color="var(--accent-2)" />
-            </div>
-          ))}
+      {daily ? (
+        <PixelLineChart
+          points={daily.moodHistory}
+          min={1}
+          max={5}
+          formatValue={(v) => MOOD_EMOJI[Math.round(v) - 1] ?? String(v)}
+        />
+      ) : null}
+
+      <p className="mt-5 mb-2 text-[0.6875rem] tracking-wide text-ink-soft uppercase">
+        Wake-up Time
+      </p>
+      {daily ? (
+        <PixelLineChart
+          points={daily.wakeHistory}
+          min={240}
+          max={780}
+          color="var(--accent-2)"
+          formatValue={(v) => formatMinutesAsTime(v)}
+        />
+      ) : null}
+
+      <p className="mt-5 mb-2 text-[0.6875rem] tracking-wide text-ink-soft uppercase">
+        🎬 Movies
+      </p>
+      {movies && movies.length > 0 ? (
+        <div className="pixel-box-sm flex flex-col gap-2 p-3">
+          <div className="flex items-center justify-between text-[0.6875rem]">
+            <span>{movies.length} watched</span>
+            {average(movies.map((m) => m.rating)) != null ? (
+              <span className="text-ink-soft">
+                avg rating {average(movies.map((m) => m.rating))!.toFixed(1)}/5
+              </span>
+            ) : null}
+          </div>
+          <ActivityHeatmap
+            dates={movies.map((m) => m.watchedAt)}
+            unitLabel="movie"
+            unitLabelPlural="movies"
+          />
         </div>
       ) : (
-        <p className="text-xs text-ink-soft">No mood logged yet — rate today on the Log tab.</p>
+        <p className="text-xs text-ink-soft">No movies logged yet — add one from the Log tab.</p>
+      )}
+
+      <p className="mt-5 mb-2 text-[0.6875rem] tracking-wide text-ink-soft uppercase">
+        📖 Books
+      </p>
+      {books && books.length > 0 ? (
+        <div className="pixel-box-sm flex flex-col gap-2 p-3">
+          <div className="flex items-center justify-between text-[0.6875rem]">
+            <span>{books.length} read</span>
+            {average(books.map((b) => b.rating)) != null ? (
+              <span className="text-ink-soft">
+                avg rating {average(books.map((b) => b.rating))!.toFixed(1)}/5
+              </span>
+            ) : null}
+          </div>
+          <ActivityHeatmap
+            dates={books.map((b) => b.readAt)}
+            unitLabel="book"
+            unitLabelPlural="books"
+          />
+        </div>
+      ) : (
+        <p className="text-xs text-ink-soft">No books logged yet — add one from the Log tab.</p>
       )}
     </div>
   );

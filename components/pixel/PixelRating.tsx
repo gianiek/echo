@@ -4,9 +4,11 @@ type Props = {
   max?: number;
   label?: string;
   disabled?: boolean;
+  /** Same length as `max` — shown instead of the plain number when provided (e.g. mood faces). */
+  labels?: string[];
 };
 
-export default function PixelRating({ value, onChange, max = 5, label, disabled }: Props) {
+export default function PixelRating({ value, onChange, max = 5, label, disabled, labels }: Props) {
   return (
     <div className="pixel-field">
       {label ? <label>{label}</label> : null}
@@ -20,7 +22,7 @@ export default function PixelRating({ value, onChange, max = 5, label, disabled 
             className={`chip ${value === level ? "is-active" : ""}`}
             aria-label={`${level} of ${max}`}
           >
-            {level}
+            {labels?.[level - 1] ?? level}
           </button>
         ))}
       </div>
