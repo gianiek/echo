@@ -58,6 +58,14 @@ export type BookDTO = {
   createdAt: string;
 };
 
+export type JournalEntryDTO = {
+  id: string;
+  category: string;
+  note: string;
+  date: string;
+  createdAt: string;
+};
+
 export type WalkDTO = {
   id: string;
   startPlaceName: string;

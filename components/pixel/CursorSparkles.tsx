@@ -68,7 +68,7 @@ export default function CursorSparkles() {
       {sparkles.map((s) => (
         <span
           key={s.id}
-          className="sparkle"
+          className="sparkle sparkle-trail"
           style={{
             left: s.x,
             top: s.y,
@@ -78,42 +78,6 @@ export default function CursorSparkles() {
           }}
         />
       ))}
-      <style jsx global>{`
-        .sparkle {
-          position: absolute;
-          width: 2px;
-          height: 2px;
-          background: transparent;
-          box-shadow:
-            0 0 0 0 transparent,
-            0 -4px 0 0 var(--sparkle-color),
-            0 4px 0 0 var(--sparkle-color),
-            -4px 0 0 0 var(--sparkle-color),
-            4px 0 0 0 var(--sparkle-color),
-            0 0 0 0 var(--sparkle-color);
-          transform: translate(-50%, -50%) rotate(var(--sparkle-rotate))
-            scale(1);
-          animation: sparkle-twinkle 700ms ease-out forwards;
-        }
-
-        @keyframes sparkle-twinkle {
-          0% {
-            opacity: 0;
-            transform: translate(-50%, -50%) rotate(var(--sparkle-rotate))
-              scale(0.4);
-          }
-          25% {
-            opacity: 1;
-            transform: translate(-50%, -50%) rotate(var(--sparkle-rotate))
-              scale(1.3);
-          }
-          100% {
-            opacity: 0;
-            transform: translate(-50%, calc(-50% - 14px))
-              rotate(var(--sparkle-rotate)) scale(0.6);
-          }
-        }
-      `}</style>
     </div>
   );
 }

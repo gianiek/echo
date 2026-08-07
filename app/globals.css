@@ -116,19 +116,22 @@ dialog.pixel-box {
   background: var(--accent);
   color: var(--accent-ink);
 }
-.pixel-btn .icon-badge {
+/* Neutral badge chip for a bare emoji icon — emoji glyphs lose legibility sitting
+   directly on saturated backgrounds, so this gives them a consistent light backdrop
+   wherever they're used as icons, not just inside buttons. */
+.icon-badge {
   display: inline-grid;
   place-items: center;
   width: 20px;
   height: 20px;
-  margin-right: 2px;
   background: var(--panel);
   border: 2px solid var(--ink);
   font-size: 0.75rem;
-  vertical-align: -5px;
+  flex-shrink: 0;
 }
-.pixel-btn--accent .icon-badge {
-  background: var(--panel);
+.pixel-btn .icon-badge {
+  margin-right: 2px;
+  vertical-align: -5px;
 }
 
 .pixel-btn--fab {
@@ -258,6 +261,112 @@ dialog.pixel-box {
   display: block;
   height: 100%;
   background: var(--pixel-bar-color, var(--accent));
+}
+
+/* Shared pixel sparkle dot — a small plus/cross shape via box-shadow, reused by the
+   cursor trail (CursorSparkles) and the one-shot save burst (SparkleBurst). */
+.sparkle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: transparent;
+  box-shadow:
+    0 -4px 0 0 var(--sparkle-color),
+    0 4px 0 0 var(--sparkle-color),
+    -4px 0 0 0 var(--sparkle-color),
+    4px 0 0 0 var(--sparkle-color);
+}
+
+.sparkle-trail {
+  transform: translate(-50%, -50%) rotate(var(--sparkle-rotate)) scale(1);
+  animation: sparkle-twinkle 700ms ease-out forwards;
+}
+@keyframes sparkle-twinkle {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--sparkle-rotate)) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--sparkle-rotate)) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 14px)) rotate(var(--sparkle-rotate)) scale(0.6);
+  }
+}
+
+.sparkle-burst {
+  left: 0;
+  top: 0;
+  animation: sparkle-burst-move 650ms ease-out forwards;
+}
+@keyframes sparkle-burst-move {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--burst-x)), calc(-50% + var(--burst-y))) scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sparkle-trail,
+  .sparkle-burst {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+.heatmap-cell {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--ink);
+  background: var(--panel-2);
+  position: relative;
+}
+.heatmap-cell--0 {
+  background: var(--panel-2);
+}
+.heatmap-cell--1 {
+  background: color-mix(in srgb, var(--accent) 35%, var(--panel-2));
+}
+.heatmap-cell--2 {
+  background: color-mix(in srgb, var(--accent) 65%, var(--panel-2));
+}
+.heatmap-cell--3 {
+  background: var(--accent);
+}
+.heatmap-cell--future {
+  visibility: hidden;
+}
+.heatmap-cell--today-active::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 1px solid var(--accent-2);
+  animation: heatmap-twinkle 1.6s ease-in-out infinite;
+}
+@keyframes heatmap-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .heatmap-cell--today-active::after {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 .mascot {

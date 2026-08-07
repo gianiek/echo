@@ -83,3 +83,13 @@ model Walk {
 
   @@index([timestamp])
 }
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  category  String // "✨" | "🤓" | "🚀" | "📝"
+  note      String
+  date      DateTime // day granularity — no time-of-day
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}

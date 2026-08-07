@@ -12,6 +12,7 @@ const TABS = [
   { href: "/log", label: "Log" },
   { href: "/stats", label: "Stats" },
   { href: "/budget", label: "Budget" },
+  { href: "/journal", label: "Journal" },
 ];
 
 export default function PixelWindow({
@@ -118,7 +119,7 @@ export default function PixelWindow({
         </button>
       </div>
 
-      <nav className="grid grid-cols-4 border-y-2 border-ink">
+      <nav className="grid grid-cols-5 border-y-2 border-ink">
         {TABS.map((tab) => {
           const active =
             tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
@@ -126,7 +127,7 @@ export default function PixelWindow({
             <Link
               key={tab.href}
               href={tab.href}
-              className={`border-r-2 border-ink px-1 py-2.5 text-center text-[0.625rem] font-bold tracking-wide uppercase last:border-r-0 ${
+              className={`border-r-2 border-ink px-0.5 py-2.5 text-center text-[0.5625rem] font-bold tracking-wide uppercase last:border-r-0 ${
                 active ? "bg-accent text-accent-ink" : "bg-panel-2 text-ink-soft"
               }`}
             >
