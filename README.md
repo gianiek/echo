@@ -5,22 +5,17 @@ walks with real routed paths, mood and sleep trends, a budget breakdown, and a
 GitHub-contributions-style journal heatmap. One app, one person, one running record
 of what's been going on.
 
-**[Live app](https://echo-ten-coral.vercel.app)** (password-gated — it's my life, not a public dataset) · **[Interactive demo](https://echo-ten-coral.vercel.app/demo)** (no login, sample data)
+**[Live app](https://echo-ten-coral.vercel.app)** (password-gated) · **[Interactive demo](https://echo-ten-coral.vercel.app/demo)** (no login, sample data)
 
 ---
 
 ## Why this exists
 
 I wanted something like the Spidey Tracker map — pin where you've been, watch the
-map fill in over time — but for my actual day-to-day: not just places, but spend,
-workouts, mood, sleep, what I watched and read, and a running journal. Nothing on
-the market does all of that in one place without asking me to hand my data to five
-different apps, so I built the one I wanted.
+map fill in over time — but for everything, not just places: spend, workouts,
+mood, sleep, movies, books, a running journal.
 
-The visual language — chunky pixel borders, a pastel-pink Tamagotchi-desktop feel —
-started as a fun constraint and turned out to be a good one: retro pixel UI has very
-few ways to *look* good, which forces real discipline in the component layer instead
-of papering over inconsistency with polish.
+The visual language: chunky pixel borders, a pastel-pink Tamagotchi-desktop feel.
 
 ## What it does
 
@@ -42,10 +37,9 @@ of papering over inconsistency with polish.
 
 ## Try it without logging in
 
-**[/demo](https://echo-ten-coral.vercel.app/demo)** renders the real UI components —
-the same map, log, stats tiles, mood chart, and journal heatmap — against hardcoded
-sample data. It never touches the database, so it's safe to link publicly even
-though the real app holds one real person's actual life.
+**[/demo](https://echo-ten-coral.vercel.app/demo)** renders the real UI — map, log,
+stats, mood chart, journal heatmap — with hardcoded sample data. No database calls,
+so it's safe to link publicly.
 
 ## Stack
 
