@@ -1,114 +1,158 @@
 # 🦇 Echo
 
-A personal, pixel-styled life tracker — pin where you go on a map, log movies/books/walks, track daily habits (mood, dinner, wake time, whether you left the house), keep a journal with a GitHub-style activity heatmap, and see it all rolled up on a stats page. Single-user, passphrase-gated, no accounts.
+A retro pixel life-tracker I built for myself — check-ins on a map, movies and books,
+walks with real routed paths, mood and sleep trends, a budget breakdown, and a
+GitHub-contributions-style journal heatmap. One app, one person, one running record
+of what's been going on.
 
-**Live**: https://echo-ten-coral.vercel.app
+**[Live app](https://echo-ten-coral.vercel.app)** (password-gated — it's my life, not a public dataset) · **[Interactive demo](https://echo-ten-coral.vercel.app/demo)** (no login, sample data)
 
-Originally called "Bat Tracker" (an inside joke) — renamed to Echo because bats navigate by echolocation, which keeps the theme without needing the backstory. The pixel bat mascot stuck around as the wordmark glyph (🦇 ECHO).
+---
 
-## Full design history
+## Why this exists
 
-This README covers "how it's built." For *why* — every decision, tradeoff, and the reasoning behind each feature across all build rounds (v1 → v1.3) — see the design doc kept alongside this project locally at `~/.claude/plans/rosy-mixing-rose.md` (not part of this repo). It's the source of truth and kept up to date; read it before making non-trivial changes.
+I wanted something like the Spidey Tracker map — pin where you've been, watch the
+map fill in over time — but for my actual day-to-day: not just places, but spend,
+workouts, mood, sleep, what I watched and read, and a running journal. Nothing on
+the market does all of that in one place without asking me to hand my data to five
+different apps, so I built the one I wanted.
+
+The visual language — chunky pixel borders, a pastel-pink Tamagotchi-desktop feel —
+started as a fun constraint and turned out to be a good one: retro pixel UI has very
+few ways to *look* good, which forces real discipline in the component layer instead
+of papering over inconsistency with polish.
+
+## What it does
+
+- **Map** — check-ins pinned with a chosen emoji, same-day stops connected by a
+  dashed route line, walks rendered as an actual routed path (via OpenRouteService)
+  with an animated "marching ants" line
+- **Log** — one unified, day-grouped feed across check-ins, movies, books, walks,
+  and journal entries — everything that happened, in order
+- **Stats** — running totals ($ spent, places visited, workouts, no-spend streak),
+  a mood trend line and a wake-time trend line, movies/books watched-and-read
+  heatmaps
+- **Budget** — spend broken down by category, drill-down into the raw purchases
+  behind each one
+- **Journal** — free-text reflections tagged by category, visualized as a
+  scrollable activity heatmap with a streak counter
+- **Share** — a read-only link (map + stop list only, no $ amounts or notes) for
+  anyone I want to give a peek without giving them an account
+- Installable as a home-screen PWA; single shared-passphrase gate, no user accounts
+
+## Try it without logging in
+
+**[/demo](https://echo-ten-coral.vercel.app/demo)** renders the real UI components —
+the same map, log, stats tiles, mood chart, and journal heatmap — against hardcoded
+sample data. It never touches the database, so it's safe to link publicly even
+though the real app holds one real person's actual life.
 
 ## Stack
 
-- **Framework**: Next.js 16 (App Router), TypeScript, Tailwind CSS
-- **Database**: Neon serverless Postgres via Prisma 7 (`@prisma/adapter-pg` driver adapter — Prisma 7 requires one explicitly)
-- **Map**: Leaflet / react-leaflet, CartoDB Positron tiles, OpenStreetMap Nominatim for place search/geocoding
-- **Walk routing**: OpenRouteService (`foot-walking` profile) — server-side only, key never reaches the client
-- **Emoji picker**: `emoji-picker-react`, dynamically imported
-- **Auth**: single shared passphrase, no user accounts — see [Auth](#auth) below
-- **Hosting**: Vercel, deployed from `main` on push
-- **Fonts**: Press Start 2P (display) + Silkscreen (body), via `next/font/google`
+| | |
+|---|---|
+| Framework | [Next.js 16](https://nextjs.org) (App Router), TypeScript, Tailwind CSS |
+| Database | [Neon](https://neon.tech) serverless Postgres via [Prisma 7](https://www.prisma.io) |
+| Map | [Leaflet](https://leafletjs.com) / `react-leaflet`, CartoDB Positron tiles, OSM Nominatim for search |
+| Routing | [OpenRouteService](https://openrouteservice.org) for real walked routes |
+| Auth | Single passphrase, HMAC'd session cookie — no accounts, no third-party auth |
+| Hosting | [Vercel](https://vercel.com) |
+| Fonts | Press Start 2P (display) + Silkscreen (body), via `next/font` |
 
-## Folder structure
+No test suite — this is a single-user personal app, so manual verification against
+a written checklist (see the design doc below) does the job a full suite would for
+a multi-user product.
+
+## How it's put together
+
+One idea shows up everywhere in the data model: **every kind of event gets its own
+table, one row each, all keyed off a real date/timestamp** — `CheckIn`, `Movie`,
+`Book`, `Walk`, `JournalEntry`. A separate `DailyLog` table holds the handful of
+*daily* (not per-event) attributes — dinner, mood, wake time, whether I left the
+house — one row per calendar day. Keeping those two shapes distinct instead of
+cramming everything into one mega-table is what makes `/api/timeline`'s unified
+feed, `/stats`'s aggregates, and a future "wrapped"-style yearly summary all
+possible as plain queries against existing tables, with no new schema.
+
+A few specific decisions worth calling out:
+
+- **Day-grouping always uses the event's own timestamp, never `createdAt`.** That's
+  what makes backfilling a forgotten check-in actually work — it slots into its
+  real day everywhere (map, log, streaks), not the day you happened to type it in.
+- **Streaks skip untracked days instead of breaking on them.** Missing data isn't
+  evidence you spent money or skipped your journal — it's just missing. A gap day
+  pauses a streak; a bad day breaks it.
+- **Walks are routed, not live-tracked.** iOS suspends a backgrounded PWA's JS the
+  instant the screen locks, so Strava-style background GPS tracking isn't
+  achievable here. Instead: log a start and end point, and let a routing API
+  compute a real, street-accurate path server-side. Zero background-tracking
+  problem, works every time.
+- **A security pass** (prompted by treating this like a real ship, not a toy)
+  found and fixed stored-XSS risk in the map's emoji rendering, timing-unsafe auth
+  comparisons, an unsalted session cookie, and missing security headers — see the
+  full writeup in the design doc below.
+
+## Project structure
 
 ```
 app/
-  (app)/            # authenticated app shell — Map (page.tsx), /log, /stats, /budget, /journal
-  api/               # route handlers — one folder per resource, REST-ish CRUD
-  login/             # passphrase entry (outside the (app) group, no shell chrome)
-  share/[token]/     # public read-only view, no auth
-  generated/prisma/  # Prisma client output (generated, not hand-edited)
+  (app)/            map, log, stats, budget, journal — behind the passphrase gate
+  api/               REST-ish route handlers, one folder per resource
+  demo/              public, unauthenticated showcase (see "Try it" above)
+  login/, share/     auth entry point and the public read-only share view
+  generated/prisma/  Prisma's generated client (custom output, not node_modules)
 components/
-  pixel/             # design system — PixelWindow, PixelButton, PixelDialog, PixelBar,
-                      # PixelLineChart, ActivityHeatmap, BatMascot, etc.
-  checkin/           # entry dialogs (CheckIn/Movie/Book/Walk/Journal) + DailyQuickLog
-  map/                # Leaflet map view, location picker
-  journal/           # JournalHeatmap (thin wrapper around ActivityHeatmap)
-  share/             # public share-page view
-lib/
-  auth.ts            # password/session-token checking, timing-safe compares
-  categories.ts       # emoji category constants (spend, journal, mood, quick-picks)
-  dates.ts            # day-grouping, formatting, minutes<->time helpers
-  types.ts            # shared DTO types returned by the API routes
-  validate.ts          # isSafeEmoji() — server-side emoji validation
-  checkins.ts / journal.ts / maps.ts / routing.ts / share.ts / prisma.ts
-prisma/
-  schema.prisma
-  migrations/         # hand-written SQL per migration — see Migrations below
-proxy.ts               # Next.js 16's middleware equivalent — the auth gate
+  pixel/             the design system — PixelWindow, PixelButton, PixelDialog,
+                     PixelBar, PixelLineChart, ActivityHeatmap, the bat mascot
+  map/, checkin/, journal/, share/
+lib/                 prisma client, auth, categories, date/day-grouping helpers
+prisma/              schema + hand-written migrations
 ```
 
-## Data model
-
-Each kind of event gets its own table, independently dated and queryable — deliberately *not* consolidated, so each can be queried/filtered on its own terms:
-
-- `CheckIn` — place + emoji pin, optional $ spent/category, workout flag
-- `Movie`, `Book` — title, emoji, rating, watched/read date
-- `Walk` — start/end point, routed geometry (from OpenRouteService), distance/duration
-- `JournalEntry` — free-text note + category + date (day granularity, no time-of-day)
-
-One exception: `DailyLog` is **one row per calendar day**, holding singular daily attributes that don't make sense as repeatable events — `dinnerType`, `didNotLeaveHouse`, `mood`, `wakeMinutes`. This is deliberately consolidated (rather than one table per habit) so a future "Wrapped"-style yearly summary can scan a single table instead of joining several.
-
-All day-grouping everywhere in the app (map polylines, `/log` day headers, streaks) uses each record's real event timestamp — never `createdAt`, which is insertion order only. This is what makes backdating a past entry actually slot it into the right day everywhere.
-
-`Settings` is a single-row table holding the "tracking as" name and the share token.
-
-## Design system
-
-Everything pixel-styled lives in `components/pixel/`, built once and reused: `PixelWindow` (the app shell + tab bar), `PixelButton`, `PixelDialog`, `PixelInput`/`PixelCheckbox`/`PixelTextarea` (`PixelField.tsx`), `PixelBar` (segmented and percent variants), `PixelRating` (1–5 chip picker, optional emoji labels), `PixelLineChart` (SVG trend line with gap-breaking for untracked days), `ActivityHeatmap` (GitHub-contributions-style calendar grid, generalized from the original journal-only heatmap), and `BatMascot`.
-
-## Auth
-
-No user accounts — a single shared passphrase (`APP_PASSWORD`) gates the whole app. On login, the server derives `HMAC-SHA256(password, SESSION_SECRET)` and sets it as a cookie; `proxy.ts` checks incoming requests against the same derivation using a timing-safe comparison (`crypto.timingSafeEqual`, via `lib/auth.ts`). Failed logins get a small artificial delay as cheap brute-force friction. This is intentionally lightweight — fine for a single-user personal app, not a substitute for real multi-user auth.
-
-## Environment variables
-
-Set locally in `.env` (gitignored) and mirrored in Vercel's project settings:
-
-| Var | Purpose |
-|---|---|
-| `DATABASE_URL` | Neon Postgres connection string |
-| `APP_PASSWORD` | The shared login passphrase |
-| `SESSION_SECRET` | HMAC key for the auth cookie — unrelated to `APP_PASSWORD` |
-| `ORS_API_KEY` | OpenRouteService key, used server-side only in `/api/walks` |
-
-## Migrations
-
-`prisma migrate dev`/`deploy` reliably time out acquiring their advisory lock against this project's Neon endpoint (confirmed not a stale-lock issue — pooled and direct connections both fail). The workaround, used for every migration so far:
-
-```bash
-# 1. Hand-write prisma/migrations/<timestamp>_<name>/migration.sql
-# 2. Apply it directly:
-npx prisma db execute --stdin < prisma/migrations/<timestamp>_<name>/migration.sql
-# 3. Record it as applied without re-running it:
-npx prisma migrate resolve --applied <timestamp>_<name>
-# 4. Regenerate the client:
-npx prisma generate
-```
-
-## Local development
+## Running it locally
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
-npm run lint
-npm run build
+npm run dev
 ```
 
-Debug the database through the app's own Prisma-backed API routes, not raw `psql`. `DateTime` columns are stored without a timezone; Prisma treats them consistently as UTC, but a raw `pg` client on this machine displays them shifted by the local session timezone — easy to mistake for duplicate/wrong rows when there aren't any.
+Needs `DATABASE_URL`, `APP_PASSWORD`, `SESSION_SECRET`, and `ORS_API_KEY` in
+`.env` — this is a personal, single-user project, not something set up for
+general self-hosting, so there's no seed script or setup wizard beyond that.
 
-## Deployment
+## The full build log
 
-Push to `main` → Vercel auto-deploys. Database is Neon Postgres, connected via `DATABASE_URL`. No CI test suite — this is a personal single-user app; changes are verified manually (build + lint clean, then a pass through the actual feature in the browser) before pushing.
+This README covers what Echo is; **[`docs/DESIGN.md`](docs/DESIGN.md)** covers
+*why*, round by round — every product decision, tradeoff, and gotcha, kept up to
+date as the project grew from a single check-in table to what's here now. If you
+want to see how a personal project actually gets scoped and sequenced rather than
+just the finished result, that's the place to look.
+
+## Roadmap
+
+What's shipped, and what's next:
+
+- ✅ Map check-ins with custom emoji pins + same-day dashed route lines
+- ✅ Budget tracking with per-category breakdown and drill-down
+- ✅ Daily habit tracking — dinner, mood, home-vs-out
+- ✅ Read-only share links for friends, no accounts required
+- ✅ Movies, books, and real routed walks folded into a unified timeline
+- ✅ Smarter map defaults (recent-activity clustering instead of all-time bounds)
+- ✅ Journal with a GitHub-contributions-style activity heatmap
+- ✅ Security hardening pass (XSS fix, timing-safe auth, HMAC'd session, headers)
+- ✅ Mood and wake-time trend lines, movies/books surfaced on the stats page
+- ✅ Wider desktop layout
+- ⬜ "Wrapped" — a yearly/monthly summary view (the data model's been shaped for
+  this since v1.1; it's a query away, not a schema change)
+- ⬜ Rate limiting on login (needs a shared store across serverless invocations —
+  currently flagged as a deliberate tradeoff, not an oversight)
+- ⬜ A real Content-Security-Policy (the current header set stops short of a full
+  CSP until it's been verified against the map tiles/geocoding/emoji-picker
+  integrations live)
+- ⬜ Offline-friendly PWA caching for spotty connections
+
+## License
+
+MIT — see [LICENSE](LICENSE). This is a personal project I'm sharing as a portfolio
+piece; the code's free to read, borrow from, or fork, but the live app is my own
+data and isn't set up as a multi-user product.
