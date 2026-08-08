@@ -2,8 +2,7 @@
 
 A retro pixel life-tracker I built for myself — check-ins on a map, movies and books,
 walks with real routed paths, mood and sleep trends, a budget breakdown, and a
-GitHub-contributions-style journal heatmap. One app, one person, one running record
-of what's been going on.
+GitHub-contributions-style journal heatmap.
 
 **[Live app](https://echo-ten-coral.vercel.app)** (password-gated) · **[Interactive demo](https://echo-ten-coral.vercel.app/demo)** (no login, sample data)
 
@@ -27,13 +26,9 @@ The visual language: chunky pixel borders, a pastel-pink Tamagotchi-desktop feel
 - **Stats** — running totals ($ spent, places visited, workouts, no-spend streak),
   a mood trend line and a wake-time trend line, movies/books watched-and-read
   heatmaps
-- **Budget** — spend broken down by category, drill-down into the raw purchases
-  behind each one
-- **Journal** — free-text reflections tagged by category, visualized as a
-  scrollable activity heatmap with a streak counter
-- **Share** — a read-only link (map + stop list only, no $ amounts or notes) for
-  anyone I want to give a peek without giving them an account
-- Installable as a home-screen PWA; single shared-passphrase gate, no user accounts
+- **Budget** — spend broken down by category
+- **Journal** — free-text reflections tagged by category, visualized as an activity heatmap with a streak counter
+- **Share** — a read-only link to share with friends
 
 ## Try it without logging in
 
@@ -53,38 +48,7 @@ so it's safe to link publicly.
 | Hosting | [Vercel](https://vercel.com) |
 | Fonts | Press Start 2P (display) + Silkscreen (body), via `next/font` |
 
-No test suite — this is a single-user personal app, so manual verification against
-a written checklist (see the design doc below) does the job a full suite would for
-a multi-user product.
-
-## How it's put together
-
-One idea shows up everywhere in the data model: **every kind of event gets its own
-table, one row each, all keyed off a real date/timestamp** — `CheckIn`, `Movie`,
-`Book`, `Walk`, `JournalEntry`. A separate `DailyLog` table holds the handful of
-*daily* (not per-event) attributes — dinner, mood, wake time, whether I left the
-house — one row per calendar day. Keeping those two shapes distinct instead of
-cramming everything into one mega-table is what makes `/api/timeline`'s unified
-feed, `/stats`'s aggregates, and a future "wrapped"-style yearly summary all
-possible as plain queries against existing tables, with no new schema.
-
-A few specific decisions worth calling out:
-
-- **Day-grouping always uses the event's own timestamp, never `createdAt`.** That's
-  what makes backfilling a forgotten check-in actually work — it slots into its
-  real day everywhere (map, log, streaks), not the day you happened to type it in.
-- **Streaks skip untracked days instead of breaking on them.** Missing data isn't
-  evidence you spent money or skipped your journal — it's just missing. A gap day
-  pauses a streak; a bad day breaks it.
-- **Walks are routed, not live-tracked.** iOS suspends a backgrounded PWA's JS the
-  instant the screen locks, so Strava-style background GPS tracking isn't
-  achievable here. Instead: log a start and end point, and let a routing API
-  compute a real, street-accurate path server-side. Zero background-tracking
-  problem, works every time.
-- **A security pass** (prompted by treating this like a real ship, not a toy)
-  found and fixed stored-XSS risk in the map's emoji rendering, timing-unsafe auth
-  comparisons, an unsalted session cookie, and missing security headers — see the
-  full writeup in the design doc below.
+No test suite — single-user personal app, verified manually.
 
 ## Project structure
 
@@ -114,14 +78,6 @@ Needs `DATABASE_URL`, `APP_PASSWORD`, `SESSION_SECRET`, and `ORS_API_KEY` in
 `.env` — this is a personal, single-user project, not something set up for
 general self-hosting, so there's no seed script or setup wizard beyond that.
 
-## The full build log
-
-This README covers what Echo is; **[`docs/DESIGN.md`](docs/DESIGN.md)** covers
-*why*, round by round — every product decision, tradeoff, and gotcha, kept up to
-date as the project grew from a single check-in table to what's here now. If you
-want to see how a personal project actually gets scoped and sequenced rather than
-just the finished result, that's the place to look.
-
 ## Roadmap
 
 What's shipped, and what's next:
@@ -136,17 +92,11 @@ What's shipped, and what's next:
 - ✅ Security hardening pass (XSS fix, timing-safe auth, HMAC'd session, headers)
 - ✅ Mood and wake-time trend lines, movies/books surfaced on the stats page
 - ✅ Wider desktop layout
-- ⬜ "Wrapped" — a yearly/monthly summary view (the data model's been shaped for
-  this since v1.1; it's a query away, not a schema change)
-- ⬜ Rate limiting on login (needs a shared store across serverless invocations —
-  currently flagged as a deliberate tradeoff, not an oversight)
-- ⬜ A real Content-Security-Policy (the current header set stops short of a full
-  CSP until it's been verified against the map tiles/geocoding/emoji-picker
-  integrations live)
+- ⬜ "Wrapped" — a yearly/monthly summary view
+- ⬜ Rate limiting on login
+- ⬜ Content-Security-Policy
 - ⬜ Offline-friendly PWA caching for spotty connections
 
 ## License
 
-MIT — see [LICENSE](LICENSE). This is a personal project I'm sharing as a portfolio
-piece; the code's free to read, borrow from, or fork, but the live app is my own
-data and isn't set up as a multi-user product.
+MIT — see [LICENSE](LICENSE). The code's open to read, copy, or fork.
