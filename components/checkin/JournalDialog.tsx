@@ -13,6 +13,14 @@ function toDateInputValue(date: Date): string {
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 10);
 }
 
+// Inverse of toDateInputValue: parse a "YYYY-MM-DD" input value as local
+// midnight (multi-arg constructor), not UTC midnight (bare string parsing) —
+// otherwise saving flips to the previous calendar day for anyone west of UTC.
+function dateInputValueToLocalDate(value: string): Date {
+  const [y, m, d] = value.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -60,7 +68,7 @@ export default function JournalDialog({ open, onClose, onSaved, onDeleted, editi
       const payload = {
         note: note.trim(),
         category,
-        date: new Date(dateLocal).toISOString(),
+        date: dateInputValueToLocalDate(dateLocal).toISOString(),
       };
 
       const res = await fetch(editing ? `/api/journal/${editing.id}` : "/api/journal", {
