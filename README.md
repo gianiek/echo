@@ -1,23 +1,12 @@
 # 🦇 Echo
 
-A retro pixel life-tracker I built for myself — check-ins on a map, movies and books,
-walks with real routed paths, mood and sleep trends, a budget breakdown, and a
-GitHub-contributions-style journal heatmap.
+A retro pixel life-tracker — check-ins on a map, movies and books, mood and sleep trends, a budget breakdown, and a GitHub-contributions-style journal heatmap.
 
-**[Live app](https://echo-ten-coral.vercel.app)** (password-gated) · **[Interactive demo](https://echo-ten-coral.vercel.app/demo)** (no login, sample data)
+**[Interactive demo](https://echo-ten-coral.vercel.app/demo)** (no login, sample data)
 
 ---
 
-## Why this exists
-
-I wanted something like the Spidey Tracker map — pin where you've been, watch the
-map fill in over time — but for everything, not just places: spend, workouts,
-mood, sleep, movies, books, a running journal.
-
-The visual language: chunky pixel borders, a pastel-pink Tamagotchi-desktop feel.
-
-## What it does
-
+## Overview
 - **Map** — check-ins pinned with a chosen emoji, same-day stops connected by a
   dashed route line, walks rendered as an actual routed path (via OpenRouteService)
   with an animated "marching ants" line
@@ -30,25 +19,6 @@ The visual language: chunky pixel borders, a pastel-pink Tamagotchi-desktop feel
 - **Journal** — free-text reflections tagged by category, visualized as an activity heatmap with a streak counter
 - **Share** — a read-only link to share with friends
 
-## Try it without logging in
-
-**[/demo](https://echo-ten-coral.vercel.app/demo)** renders the real UI — map, log,
-stats, mood chart, journal heatmap — with hardcoded sample data. No database calls,
-so it's safe to link publicly.
-
-## Stack
-
-| | |
-|---|---|
-| Framework | [Next.js 16](https://nextjs.org) (App Router), TypeScript, Tailwind CSS |
-| Database | [Neon](https://neon.tech) serverless Postgres via [Prisma 7](https://www.prisma.io) |
-| Map | [Leaflet](https://leafletjs.com) / `react-leaflet`, CartoDB Positron tiles, OSM Nominatim for search |
-| Routing | [OpenRouteService](https://openrouteservice.org) for real walked routes |
-| Auth | Single passphrase, HMAC'd session cookie — no accounts, no third-party auth |
-| Hosting | [Vercel](https://vercel.com) |
-| Fonts | Press Start 2P (display) + Silkscreen (body), via `next/font` |
-
-No test suite — single-user personal app, verified manually.
 
 ## Project structure
 
@@ -75,12 +45,9 @@ npm run dev
 ```
 
 Needs `DATABASE_URL`, `APP_PASSWORD`, `SESSION_SECRET`, and `ORS_API_KEY` in
-`.env` — this is a personal, single-user project, not something set up for
-general self-hosting, so there's no seed script or setup wizard beyond that.
+`.env` — currently a personal, single-user project.
 
 ## Roadmap
-
-What's shipped, and what's next:
 
 - ✅ Map check-ins with custom emoji pins + same-day dashed route lines
 - ✅ Budget tracking with per-category breakdown and drill-down
@@ -97,6 +64,4 @@ What's shipped, and what's next:
 - ⬜ Content-Security-Policy
 - ⬜ Offline-friendly PWA caching for spotty connections
 
-## License
 
-MIT — see [LICENSE](LICENSE). The code's open to read, copy, or fork.
